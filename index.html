@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stroomschema groenaanleg</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --paneel: #ffffff; --inkt: #1d2420; --zacht: #5d6861; --lijn: #d9d8d0;
+    --accent: #1f4e3d; --accent-zacht: #e4eee8;
+    --ja: #2e7d4f; --ja-bg: #e3f1e6; --nee: #b3402e; --nee-bg: #f9e5e0; --twijfel: #9a6b00; --twijfel-bg: #fbf0cf;
+    --pijl: #4d7fbe; --plaats-bg: #e9e7df;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151916; --paneel: #1e2420; --inkt: #e8ebe6; --zacht: #9aa69d; --lijn: #353d37;
+      --accent: #8fc7a8; --accent-zacht: #24332b;
+      --ja: #7fcf9b; --ja-bg: #1d3526; --nee: #ef9080; --nee-bg: #3d221d; --twijfel: #e6c15a; --twijfel-bg: #3a3118;
+      --pijl: #7ea8dc; --plaats-bg: #2c322d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--inkt); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  header { padding: 22px 28px 14px; border-bottom: 1px solid var(--lijn); background: var(--paneel); }
+  h1 { margin: 0 0 4px; font-size: 22px; font-weight: 650; letter-spacing: -.01em; }
+  header p { margin: 0; color: var(--zacht); max-width: 78ch; }
+  main { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 20px; padding: 20px 28px 40px; align-items: start; }
+  @media (max-width: 1150px) { main { grid-template-columns: minmax(0, 1fr); padding: 16px; } header { padding: 16px; } .rechts { order: -1; } }
+  section { background: var(--paneel); border: 1px solid var(--lijn); border-radius: 10px; padding: 16px 18px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--zacht); margin: 0 0 12px; font-weight: 600; }
+  .rechts { display: grid; gap: 20px; position: sticky; top: 12px; }
+  @media (max-width: 1150px) { .rechts { position: static; } }
+
+  /* invoer */
+  .invoer { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  input[type=text] { font: inherit; padding: 8px 10px; border: 1px solid var(--lijn); border-radius: 7px; background: var(--bg); color: var(--inkt); width: 150px; }
+  button { font: inherit; padding: 8px 14px; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: var(--paneel); cursor: pointer; font-weight: 600; }
+  button.licht { background: transparent; color: var(--accent); border-color: var(--lijn); font-weight: 500; padding: 5px 10px; font-size: 13px; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible, .tak:focus-visible { outline: 2px solid var(--pijl); outline-offset: 2px; }
+  .voorbeelden { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; color: var(--zacht); font-size: 13px; }
+  details { margin-top: 12px; } summary { cursor: pointer; color: var(--accent); font-size: 14px; }
+  textarea { width: 100%; min-height: 110px; margin-top: 8px; font: inherit; padding: 8px 10px; border: 1px solid var(--lijn); border-radius: 7px; background: var(--bg); color: var(--inkt); resize: vertical; }
+  #status { color: var(--zacht); font-size: 13px; min-height: 1.4em; margin-top: 8px; }
+
+  /* uitkomst */
+  .uitkomst { border-left: 6px solid var(--lijn); padding: 4px 0 4px 14px; }
+  .uitkomst.ja { border-color: var(--ja); } .uitkomst.nee { border-color: var(--nee); } .uitkomst.twijfel { border-color: var(--twijfel); }
+  .uitkomst .code { font-size: 30px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .uitkomst .tekst { font-size: 17px; font-weight: 600; }
+  .ja .tekst, .ja .code { color: var(--ja); } .nee .tekst, .nee .code { color: var(--nee); } .twijfel .tekst, .twijfel .code { color: var(--twijfel); }
+  .meta { color: var(--zacht); font-size: 13px; margin: 2px 0 10px; }
+  .reden { margin: 8px 0 0; }
+  .feiten { display: grid; grid-template-columns: max-content 1fr; gap: 2px 14px; font-size: 13.5px; margin: 0 0 14px; }
+  .feiten dt { color: var(--zacht); } .feiten dd { margin: 0; }
+  ol.stappen { margin: 12px 0 0; padding-left: 0; list-style: none; font-size: 13.5px; }
+  ol.stappen li { padding: 6px 0; border-top: 1px solid var(--lijn); display: grid; grid-template-columns: 44px 1fr auto; gap: 8px; }
+  ol.stappen .nr { font-weight: 700; color: var(--zacht); } ol.stappen .antw { font-weight: 700; text-transform: uppercase; font-size: 12px; }
+  ol.stappen .toel { grid-column: 2 / 4; color: var(--zacht); }
+  a { color: var(--accent); }
+
+  /* tekst */
+  .regtekst { white-space: pre-wrap; font: 14px/1.6 Georgia, "Times New Roman", serif; max-height: 420px; overflow: auto; padding-right: 6px; }
+  .regtekst .kop { display: inline-block; font: 600 11px/1.6 "Segoe UI", system-ui, sans-serif; text-transform: uppercase; letter-spacing: .07em; color: var(--paneel); background: var(--zacht); padding: 0 6px; border-radius: 3px; }
+  mark { color: inherit; border-radius: 3px; padding: 0 2px; }
+  mark.KAPITAAL { background: var(--ja-bg); box-shadow: inset 0 -2px 0 var(--ja); font-weight: 700; }
+  mark.OPSOMMING, mark.ONDERWERP { background: var(--ja-bg); }
+  mark.PLAATS { background: var(--plaats-bg); box-shadow: inset 0 -2px 0 var(--zacht); }
+  mark.zwak { background: transparent; box-shadow: inset 0 -2px 0 var(--lijn); }
+  .legenda { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12.5px; color: var(--zacht); margin-bottom: 10px; }
+
+  /* stroomschema */
+  .schema { display: grid; gap: 0; }
+  .stap { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 0 22px; }
+  @media (max-width: 620px) { .stap { grid-template-columns: minmax(0, 1fr); gap: 8px; } .nee-pijl { justify-self: start; padding-left: 60px; } .tak { grid-template-columns: minmax(0, 1fr) 40px 110px; } }
+  .vraag { border: 2px solid var(--pijl); border-radius: 6px; padding: 10px 12px; font-size: 13.5px; align-self: start; background: var(--paneel); position: relative; }
+  .vraag b { font-weight: 700; }
+  .takken { display: grid; gap: 8px; padding-bottom: 6px; }
+  .tak { display: grid; grid-template-columns: minmax(0, 1fr) 44px 140px; align-items: stretch; gap: 0; cursor: pointer; border-radius: 6px; text-align: left; background: none; border: 0; padding: 0; color: inherit; font: inherit; font-weight: 400; }
+  .tak .vw { border: 1.5px solid var(--pijl); border-radius: 6px; padding: 7px 10px; font-size: 13px; background: var(--paneel); }
+  .tak .pijl { display: grid; place-items: center; color: var(--pijl); font-weight: 700; font-size: 12px; white-space: nowrap; }
+  .tak .uit { border: 2px solid; border-radius: 6px; padding: 7px 10px; font-size: 13px; }
+  .tak.ja .uit { border-color: var(--ja); } .tak.nee .uit { border-color: var(--nee); }
+  .tak .uit b { display: block; }
+  .tak:hover .vw { background: var(--accent-zacht); }
+  .nee-pijl { grid-column: 1; justify-self: center; color: var(--pijl); font-size: 12px; font-weight: 700; padding: 6px 0; text-align: center; line-height: 1.1; }
+  .nee-pijl::after { content: "▼"; display: block; }
+  /* actief pad */
+  .schema.heeft-pad .stap, .schema.heeft-pad .nee-pijl { opacity: .42; }
+  .schema.heeft-pad .stap.op-pad, .schema.heeft-pad .nee-pijl.op-pad { opacity: 1; }
+  .schema.heeft-pad .stap.actief .tak { opacity: .42; }
+  .schema.heeft-pad .stap.actief .tak.gekozen, .schema.heeft-pad .stap.actief .tak.voorstel { opacity: 1; }
+  .stap.actief .vraag { background: var(--accent-zacht); border-width: 3px; }
+  .tak.gekozen.ja .uit { background: var(--ja-bg); } .tak.gekozen.nee .uit { background: var(--nee-bg); }
+  .tak.gekozen .vw { background: var(--accent-zacht); border-width: 2.5px; }
+  .tak.voorstel .uit, .tak.voorstel .vw { border-style: dashed; background: var(--twijfel-bg); }
+  .voetnoot { font-size: 12.5px; color: var(--zacht); margin: 14px 0 0; }
+  .hint { font-size: 13px; color: var(--zacht); margin: -4px 0 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Stroomschema beschermde groenaanleg</h1>
+  <p>Het stroomschema “Inventarisatie beschermde groenaanleg: uniform inventariseren” (16 november 2015), werkend gemaakt. Vul een rijksmonumentnummer in: de registeromschrijving wordt opgehaald uit de Linked Data Voorziening en langs het schema gelegd. Je kunt ook zelf een pad aanklikken.</p>
+</header>
+<main>
+  <section aria-label="Stroomschema">
+    <h2>Stroomschema</h2>
+    <p class="hint">Het gemarkeerde pad is de uitkomst voor het gekozen monument. Klik op een voorwaarde om zelf te kiezen.</p>
+    <div class="schema" id="schema"></div>
+    <p class="voetnoot"><b>* 2.C</b> Plaatsaanduiding / situeringswaarde en dus geen monument volgens 2.C. Voorbeelden: ‘pastorie <u>in</u> grote tuin’, ‘in de tuin een tuinbeeld’, ‘de tuin wordt aan de oostzijde afgesloten door een TUINMUUR’.</p>
+  </section>
+
+  <div class="rechts">
+    <section aria-label="Monument kiezen">
+      <h2>Monument</h2>
+      <form class="invoer" id="formulier">
+        <label for="nr">Rijksmonumentnummer</label>
+        <input type="text" id="nr" inputmode="numeric" autocomplete="off" placeholder="bv. 518800">
+        <button type="submit">Toets aan schema</button>
+      </form>
+      <div class="voorbeelden" id="voorbeelden">Voorbeelden:</div>
+      <details>
+        <summary>Of plak zelf een omschrijving</summary>
+        <textarea id="eigen" placeholder="Plak hier de tekst van een registeromschrijving…"></textarea>
+        <button class="licht" id="eigenknop" type="button">Toets deze tekst</button>
+      </details>
+      <div id="status" role="status"></div>
+    </section>
+
+    <section aria-label="Uitkomst" id="uitkomstblok" hidden>
+      <h2>Uitkomst</h2>
+      <div id="uitkomst"></div>
+    </section>
+
+    <section aria-label="Registeromschrijving" id="tekstblok" hidden>
+      <h2>Registeromschrijving</h2>
+      <div class="legenda">
+        <span><mark class="KAPITAAL">AANLEG</mark> in kapitalen</span>
+        <span><mark class="OPSOMMING">aanleg</mark> genoemd, geen plaatsbepaling</span>
+        <span><mark class="PLAATS">aanleg</mark> plaatsbepaling</span>
+        <span><mark class="zwak">vijver</mark> los element</span>
+      </div>
+      <div class="regtekst" id="regtekst"></div>
+    </section>
+  </div>
+</main>
+
+<script src="classify.js"></script>
+<script>
+(function () {
+  'use strict';
+  var ENDPOINT = 'https://api.linkeddata.cultureelerfgoed.nl/datasets/rce/cho/sparql';
+  var PFX = 'PREFIX ceo: <https://linkeddata.cultureelerfgoed.nl/def/ceo#> PREFIX skos: <http://www.w3.org/2004/02/skos/core#> ';
+  var BESCHERMD = { '1.A': 1, '2.A': 1, '2.B': 1, '3.B': 1, '3.C': 1, '3.D': 1, '3.E': 1 };
+
+  // Het schema zoals in de PDF (16 november 2015)
+  var SCHEMA = [
+    { nr: 1, vraag: '<b>1.</b> De groenaanleg heeft een <b>eigen monumentnummer</b>, is hoofdonderwerp.', takken: [
+      { code: '1.A', vw: 'Ja: de groenaanleg is zelf het monument.' }] },
+    { nr: 2, vraag: '<b>2.</b> De <b>(oudere) omschrijving</b> is een platte tekst; er is geen indeling in inleiding / omschrijving / waardering. Korte tekst.', takken: [
+      { code: '2.A', vw: 'Genoemd als <b>zelfstandige eenheid met zeer korte aanduiding</b>, voorbeeld: “pastorie <u>met</u> tuin en hek”.' },
+      { code: '2.B', vw: 'Genoemd als <b>zelfstandige eenheid met nadere specificatie</b>, voorbeeld: ‘grote tuin met oude bomen’ of ‘verhoogd kerkhof omgeven door boomsingel’.' },
+      { code: '2.C', vw: '<b>Louter plaatsaanduiding</b>, ook wel situeringswaarde. De rest van de omschrijving gaat over een ander object. Zie voorbeelden*.' }] },
+    { nr: 3, vraag: '<b>3. Nieuwere omschrijving</b> met inleiding, omschrijving en waardering (soms niet alle drie).', takken: [
+      { code: '3.A', vw: 'De aanleg is alleen genoemd in de <b>inleiding</b>, niet in omschrijving en waardering, in <b>kleine</b> letters (onderkast).' },
+      { code: '3.B', vw: 'De aanleg is genoemd in de <b>inleiding</b>, of inleiding en waardering, in <b>HOOFDLETTERS</b>.' },
+      { code: '3.C', vw: 'De aanleg is genoemd in de <b>inleiding en omschrijving</b>, en het is geen plaatsbepaling.' },
+      { code: '3.D', vw: 'De aanleg is genoemd in de <b>inleiding, omschrijving én waardering</b> en het is geen plaatsbepaling.' },
+      { code: '3.E', vw: 'De aanleg is genoemd in <b>omschrijving of omschrijving en waardering</b>, en het is geen plaatsbepaling.' },
+      { code: '3.F', vw: 'De aanleg is alleen genoemd in de <b>waardering</b>.' },
+      { code: '3.G', vw: 'De aanleg is alleen genoemd <b>als plaatsbepaling</b>, in welk deel ook.' }] },
+    { nr: 4, vraag: '<b>4. Alleen genoemd in een complexomschrijving</b>, maar niet bij een van de complexonderdelen.', takken: [
+      { code: '4.A', vw: 'De aanleg is vrij uitgebreid omschreven, gespecificeerd.' },
+      { code: '4.B', vw: 'De aanleg is niet uitgebreid omschreven, als situeringswaarde.' }] }
+  ];
+
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+
+  function tekenSchema() {
+    var h = '';
+    SCHEMA.forEach(function (s, i) {
+      h += '<div class="stap" data-stap="' + s.nr + '"><div class="vraag">' + s.vraag + '</div><div class="takken">';
+      s.takken.forEach(function (t) {
+        var ja = BESCHERMD[t.code];
+        h += '<button type="button" class="tak ' + (ja ? 'ja' : 'nee') + '" data-code="' + t.code + '" aria-label="Kies ' + t.code + '">' +
+          '<span class="vw">' + t.vw + '</span><span class="pijl">Ja ➜</span>' +
+          '<span class="uit"><b>' + t.code + '</b>' + esc(Stroomschema.UITKOMST[t.code]) + '</span></button>';
+      });
+      h += '</div></div>';
+      if (i < SCHEMA.length - 1) h += '<div class="nee-pijl" data-na="' + s.nr + '">Nee</div>';
+    });
+    $('schema').innerHTML = h;
+    $('schema').addEventListener('click', function (e) {
+      var tak = e.target.closest('.tak'); if (!tak) return;
+      var code = tak.dataset.code;
+      markeer(code, null);
+      toonUitkomst({ code: code, uitkomst: Stroomschema.UITKOMST[code], beschermd: !!BESCHERMD[code], handmatig: true,
+        reden: 'Handmatig gekozen in het stroomschema.', stappen: [] }, huidige);
+    });
+  }
+
+  function markeer(code, voorstel) {
+    var schema = $('schema');
+    schema.querySelectorAll('.op-pad,.actief,.gekozen,.voorstel').forEach(function (el) { el.classList.remove('op-pad', 'actief', 'gekozen', 'voorstel'); });
+    var doel = /^\d/.test(code || '') ? code : voorstel;
+    schema.classList.toggle('heeft-pad', !!doel);
+    if (!doel) return;
+    var stapNr = +doel.charAt(0);
+    schema.querySelectorAll('.stap').forEach(function (el) {
+      var n = +el.dataset.stap;
+      if (n <= stapNr) el.classList.add('op-pad');
+      if (n === stapNr) el.classList.add('actief');
+    });
+    schema.querySelectorAll('.nee-pijl').forEach(function (el) { if (+el.dataset.na < stapNr) el.classList.add('op-pad'); });
+    var tak = schema.querySelector('.tak[data-code="' + doel + '"]');
+    if (tak) tak.classList.add(/^\d/.test(code || '') ? 'gekozen' : 'voorstel');
+  }
+
+  var huidige = null; // gegevens van het laatst opgehaalde monument
+
+  function toonUitkomst(r, m) {
+    var soort = r.beschermd ? 'ja' : (r.code === '?' || r.code === '4.A') ? 'twijfel' : 'nee';
+    var h = '';
+    if (m && m.nr) {
+      h += '<dl class="feiten"><dt>Monument</dt><dd><a href="https://monumentenregister.cultureelerfgoed.nl/monumenten/' + esc(m.nr) + '" target="_blank" rel="noopener">' + esc(m.nr) + '</a>' + (m.naam ? ' · ' + esc(m.naam) : '') + '</dd>';
+      if (m.functies.length || m.types.length) h += '<dt>Functie / type</dt><dd>' + esc(m.functies.concat(m.types).join('; ')) + '</dd>';
+      if (m.complex) h += '<dt>Complex</dt><dd>' + esc(m.complex) + '</dd>';
+      h += '<dt>Lijst groenaanleg v1</dt><dd>' + (m.v1.length ? 'ja, als ' + esc(m.v1.join(', ')) : 'staat er niet op') + '</dd></dl>';
+    }
+    h += '<div class="uitkomst ' + soort + '"><div class="code">' + esc(r.code === '-' ? '—' : r.code) + '</div><div class="tekst">' + esc(r.uitkomst) + '</div>' +
+      '<div class="meta">' + (r.handmatig ? 'handmatig gekozen' : 'zekerheid: ' + esc(r.zekerheid) + (r.voorstel ? ' · voorstel: ' + esc(r.voorstel) : '')) + '</div>' +
+      '<p class="reden">' + esc(r.reden) + '</p></div>';
+    if (r.stappen && r.stappen.length) {
+      h += '<ol class="stappen">';
+      r.stappen.forEach(function (s) {
+        h += '<li><span class="nr">' + esc(s.stap) + '</span><span>' + esc(s.vraag) + '</span><span class="antw">' + esc(s.antwoord) + '</span>' +
+          (s.toelichting ? '<span class="toel">' + esc(s.toelichting) + '</span>' : '') + '</li>';
+      });
+      h += '</ol>';
+    }
+    if (m && m.v1 && m.v1.length && !r.handmatig && !r.beschermd) h += '<p class="meta">Let op: dit monument staat wél op lijst v1. Het is dus een mogelijke afvaller of twijfelaar.</p>';
+    $('uitkomst').innerHTML = h; $('uitkomstblok').hidden = false;
+  }
+
+  function toonTekst(tekst, r) {
+    var punten = [];
+    (r.secties && r.secties.gestructureerd ? r.secties.delen : []).forEach(function (d) { punten.push({ pos: d.start, kop: d.naam }); });
+    var V = (r.vermeldingen || []).slice().sort(function (a, b) { return a.start - b.start; });
+    var uit = '', pos = 0, ki = 0;
+    punten.sort(function (a, b) { return a.pos - b.pos; });
+    function tot(eind) {
+      while (ki < punten.length && punten[ki].pos <= eind) {
+        uit += esc(tekst.slice(pos, punten[ki].pos)); pos = punten[ki].pos;
+        // alleen een label tonen als de kop niet al in de tekst zelf staat
+        if (tekst.slice(Math.max(0, pos - 60), pos).toLowerCase().indexOf(punten[ki].kop) < 0) uit += '<span class="kop">' + esc(punten[ki].kop) + '</span> ';
+        ki++;
+      }
+      uit += esc(tekst.slice(pos, eind)); pos = eind;
+    }
+    V.forEach(function (v) {
+      if (v.start < pos) return;
+      tot(v.start);
+      uit += '<mark class="' + (v.zwak ? 'zwak' : v.klasse) + '" title="' + esc(v.klasse.toLowerCase() + (v.voorzetsel ? ' (' + v.voorzetsel + ')' : '') + ' · ' + v.sectie) + '">' + esc(tekst.slice(v.start, v.eind)) + '</mark>';
+      pos = v.eind;
+    });
+    tot(tekst.length);
+    $('regtekst').innerHTML = uit; $('tekstblok').hidden = false;
+  }
+
+  function sparql(q) {
+    return fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/sparql-results+json' },
+      body: 'query=' + encodeURIComponent(PFX + q) })
+      .then(function (r) { if (!r.ok) throw new Error('Het SPARQL-endpoint gaf status ' + r.status); return r.json(); })
+      .then(function (j) { return j.results.bindings.map(function (b) { var o = {}; for (var k in b) o[k] = b[k].value; return o; }); });
+  }
+  function uniek(a) { return a.filter(function (x, i) { return x && a.indexOf(x) === i; }); }
+
+  function haalOp(nr) {
+    var id = '"' + nr + '"';
+    $('status').textContent = 'Omschrijving ophalen uit de Linked Data Voorziening…';
+    var q1 = 'SELECT ?tekst ?datum WHERE { ?s ceo:rijksmonumentnummer ' + id + ' ; ceo:heeftOmschrijving ?k . ?k ceo:formeelStandpunt true ; ceo:omschrijving ?tekst . OPTIONAL { ?k ceo:registratiedatum ?datum } }';
+    var q2 = 'SELECT DISTINCT ?soort ?l WHERE { ?s ceo:rijksmonumentnummer ' + id + ' . { ?s ceo:heeftOorspronkelijkeFunctie ?k . ?k ceo:formeelStandpunt true ; ceo:heeftFunctieNaam/skos:prefLabel ?l BIND("functie" AS ?soort) }' +
+      ' UNION { ?s ceo:heeftType ?k . ?k ceo:formeelStandpunt true ; ceo:heeftTypeNaam/skos:prefLabel ?l BIND("type" AS ?soort) }' +
+      ' UNION { ?s ceo:heeftNaam ?k . ?k ceo:formeelStandpunt true ; ceo:naam ?l BIND("naam" AS ?soort) }' +
+      ' UNION { ?s ceo:heeftTypeAanleg/skos:prefLabel ?l BIND("v1" AS ?soort) }' +
+      ' UNION { ?s ceo:isOnderdeelVanComplex/ceo:complexnummer ?l BIND("complex" AS ?soort) }' +
+      ' UNION { ?s ceo:heeftJuridischeStatus/skos:prefLabel ?l BIND("status" AS ?soort) } FILTER(!isLiteral(?l) || lang(?l) IN ("nl", "")) }';
+    return Promise.all([sparql(q1), sparql(q2)]).then(function (res) {
+      var teksten = res[0].sort(function (a, b) { return (b.datum || '').localeCompare(a.datum || ''); });
+      var van = function (s) { return uniek(res[1].filter(function (r) { return r.soort === s; }).map(function (r) { return r.l; })); };
+      if (!res[1].length && !teksten.length) throw new Error('Geen rijksmonument gevonden met nummer ' + nr + '.');
+      var m = { nr: nr, tekst: teksten.length ? teksten[0].tekst : '', naam: van('naam')[0] || '', functies: van('functie'), types: van('type'), v1: van('v1'), complex: van('complex')[0] || '', status: van('status') };
+      var r = Stroomschema.classify(m);
+      if (r.code !== '-' || !m.complex) return { m: m, r: r };
+      // Stap 4: aanleg alleen in de complexomschrijving?
+      $('status').textContent = 'Geen aanleg in de omschrijving; complex ' + m.complex + ' controleren (stap 4)…';
+      var q3 = 'SELECT ?wie ?tekst WHERE { ?s ceo:rijksmonumentnummer ' + id + ' ; ceo:isOnderdeelVanComplex ?c . { ?c ceo:heeftOmschrijving ?k BIND("complex" AS ?wie) } UNION { ?d ceo:isOnderdeelVanComplex ?c ; ceo:rijksmonumentnummer ?wie ; ceo:heeftOmschrijving ?k } ?k ceo:formeelStandpunt true ; ceo:omschrijving ?tekst }';
+      return sparql(q3).then(function (rows) {
+        var cx = rows.filter(function (x) { return x.wie === 'complex'; })[0];
+        var onderdeelNoemt = rows.some(function (x) { return x.wie !== 'complex' && Stroomschema.classify({ tekst: x.tekst }).code !== '-'; });
+        if (cx && !onderdeelNoemt) {
+          var r4 = Stroomschema.classifyComplex({ tekst: cx.tekst });
+          if (r4) {
+            r4.stappen = r.stappen.concat([{ stap: 4, vraag: 'Alleen genoemd in een complexomschrijving, maar niet bij een van de complexonderdelen', antwoord: 'ja', toelichting: 'Complex ' + m.complex }]);
+            m.tekst = 'COMPLEXOMSCHRIJVING ' + m.complex + '\n\n' + cx.tekst; m.isComplexTekst = true;
+            // vermeldingen opnieuw bepalen op de getoonde tekst
+            var hulp = Stroomschema.classifyComplex({ tekst: m.tekst }); if (hulp) { r4.vermeldingen = hulp.vermeldingen; r4.secties = hulp.secties; }
+            return { m: m, r: r4 };
+          }
+        }
+        return { m: m, r: r };
+      });
+    });
+  }
+
+  function toets(nr) {
+    nr = String(nr).replace(/\D/g, ''); if (!nr) return;
+    $('nr').value = nr;
+    haalOp(nr).then(function (x) {
+      huidige = x.m;
+      markeer(x.r.code, x.r.voorstel);
+      toonUitkomst(x.r, x.m); toonTekst(x.m.tekst, x.r);
+      $('status').textContent = x.m.status.length && x.m.status.indexOf('rijksmonument') < 0 ? 'Let op: juridische status is “' + x.m.status.join(', ') + '”.' : '';
+      try { history.replaceState(null, '', '?nr=' + nr); } catch (e) { /* file:// */ }
+    }).catch(function (e) {
+      $('status').textContent = e.message || 'Ophalen mislukt. Controleer de internetverbinding.';
+    });
+  }
+
+  tekenSchema();
+  $('formulier').addEventListener('submit', function (e) { e.preventDefault(); toets($('nr').value); });
+  $('eigenknop').addEventListener('click', function () {
+    var t = $('eigen').value; if (!t.trim()) return;
+    var r = Stroomschema.classify({ tekst: t }); huidige = null;
+    markeer(r.code, r.voorstel); toonUitkomst(r, null); toonTekst(t.replace(/\r\n?/g, '\n'), r); $('status').textContent = '';
+  });
+  [['518800', 'Joodse begraafplaats Eindhoven'], ['384277', 'familiebegraafplaats'], ['21531', 'kerk en kerkhof'], ['515475', 'villa in tuin'], ['513472', 'tuinaanleg Springer'], ['519436', 'boerderij met voortuin'], ['9483', 'kerk op kerkhof']].forEach(function (v) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'licht'; b.textContent = v[0] + ' · ' + v[1];
+    b.addEventListener('click', function () { toets(v[0]); }); $('voorbeelden').appendChild(b);
+  });
+  var start = new URLSearchParams(location.search).get('nr');
+  if (start) toets(start);
+})();
+</script>
+</body>
+</html>
