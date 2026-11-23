@@ -20,7 +20,7 @@ from importlib import import_module  # noqa: E402
 oorzaak = import_module("3_excel").oorzaak  # draait ook meteen de Excel/CSV-export opnieuw
 
 VELDEN = ["nr", "naam", "gemeente", "provincie", "complexnr", "functie", "code", "voorstel", "uitkomst", "beschermd",
-          "zekerheid", "reden", "v1", "v1type", "v1categorie", "vergelijking"]
+          "zekerheid", "reden", "v1", "v1objectid", "v1type", "v1categorie", "vergelijking", "link", "uri"]
 ZEK = {"hoog": 0, "middel": 1, "laag": 2}
 keuze = [r for r in rows if r["beschermd"] or r["v1"] == "ja" or r["code"] in ("?", "4.A")]
 keuze.sort(key=lambda r: (ZEK.get(r["zekerheid"], 3), r["provincie"], r["gemeente"], r["nr"]))

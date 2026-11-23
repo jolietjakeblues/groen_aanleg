@@ -70,9 +70,10 @@ for (const m of mon.values()) {
     complexnr: m.complex ? +m.complex.nr : null, hoofdobject: m.complex ? (m.complex.hoofd === m.uri ? 'ja' : 'nee') : '',
     functie: m.functies.join('; '), type: m.types.join('; '),
     code, voorstel: c.voorstel || '', uitkomst, beschermd: c.beschermd, zekerheid, reden,
-    v1: g ? 'ja' : 'nee', v1type: g ? g.type : '', v1categorie: g ? g.categorie : '', v1contour: g ? g.contour || '' : '', v1opp: g ? g.opp || null : null,
+    v1: g ? 'ja' : 'nee', v1objectid: g ? +g.objectid : null, v1type: g ? g.type : '', v1categorie: g ? g.categorie : '', v1contour: g ? g.contour || '' : '', v1opp: g ? g.opp || null : null,
     vergelijking: vergelijk(m, g),
-    link: 'https://monumentenregister.cultureelerfgoed.nl/monumenten/' + m.nr
+    link: 'https://monumentenregister.cultureelerfgoed.nl/monumenten/' + m.nr,
+    uri: m.uri
   });
 }
 rows.sort((a, b) => a.nr - b.nr);

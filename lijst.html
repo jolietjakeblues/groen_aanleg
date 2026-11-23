@@ -36,7 +36,7 @@
   :focus-visible { outline: 2px solid #4d7fbe; outline-offset: 2px; }
   #teller { color: var(--zacht); font-size: 13.5px; margin: 0 0 8px; }
   .wrap { overflow-x: auto; background: var(--paneel); border: 1px solid var(--lijn); border-radius: 10px; }
-  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 900px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 1020px; }
   th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--zacht); padding: 9px 10px; border-bottom: 1px solid var(--lijn); white-space: nowrap; position: sticky; top: 0; background: var(--paneel); }
   td { padding: 8px 10px; border-bottom: 1px solid var(--lijn); vertical-align: top; }
   tr:last-child td { border-bottom: 0; }
@@ -46,6 +46,7 @@
   .code { display: inline-block; min-width: 38px; text-align: center; padding: 1px 7px; border-radius: 5px; font-weight: 700; font-variant-numeric: tabular-nums; }
   .code.ja { background: var(--ja-bg); color: var(--ja); } .code.nee { background: var(--nee-bg); color: var(--nee); } .code.twijfel { background: var(--twijfel-bg); color: var(--twijfel); }
   .zacht { color: var(--zacht); }
+  td.links a { display: block; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -57,7 +58,7 @@
 <main>
   <div class="groepen" id="groepen" role="group" aria-label="Groep"></div>
   <div class="filters">
-    <input type="search" id="zoek" placeholder="Zoek op nummer, naam, gemeente…" aria-label="Zoeken">
+    <input type="search" id="zoek" placeholder="Zoek op nummer, naam, gemeente, objectid…" aria-label="Zoeken">
     <select id="code" aria-label="Code"><option value="">Alle codes</option></select>
     <select id="zek" aria-label="Zekerheid"><option value="">Alle zekerheden</option><option>hoog</option><option>middel</option><option>laag</option></select>
     <select id="prov" aria-label="Provincie"><option value="">Alle provincies</option></select>
@@ -67,7 +68,7 @@
   </div>
   <p id="teller" role="status">Laden…</p>
   <div class="wrap"><table>
-    <thead><tr><th>Nummer</th><th>Naam</th><th>Gemeente</th><th>Code</th><th>Zekerheid</th><th>Lijst v1</th><th>Reden</th></tr></thead>
+    <thead><tr><th>Nummer</th><th>Naam</th><th>Gemeente</th><th>Code</th><th>Zekerheid</th><th>Lijst v1 (2024)</th><th>Reden</th><th>Links</th></tr></thead>
     <tbody id="rijen"></tbody>
   </table></div>
 </main>
@@ -92,7 +93,7 @@
     var q = $('zoek').value.trim().toLowerCase(), c = $('code').value, z = $('zek').value, p = $('prov').value, t = $('type').value, o = $('oorzaak').value;
     return DATA.filter(function (r) {
       return test[groep](r) && (!c || r.code === c) && (!z || r.zekerheid === z) && (!p || r.provincie === p) && (!t || r.v1type === t) && (!o || r.oorzaak === o) &&
-        (!q || (r.nr + ' ' + r.naam + ' ' + r.gemeente + ' ' + r.functie + ' ' + (r.complexnr || '')).toLowerCase().indexOf(q) >= 0);
+        (!q || (r.nr + ' ' + r.naam + ' ' + r.gemeente + ' ' + r.functie + ' ' + (r.complexnr || '') + (r.v1objectid ? ' objectid ' + r.v1objectid : '')).toLowerCase().indexOf(q) >= 0);
     });
   }
   function teken() {
@@ -102,9 +103,10 @@
       var soort = r.beschermd ? 'ja' : (r.code === '?' || r.code === '4.A') ? 'twijfel' : 'nee';
       h += '<tr><td class="nr"><a href="index.html?nr=' + r.nr + '">' + r.nr + '</a></td><td>' + esc(r.naam) + '<div class="zacht">' + esc(r.functie) + '</div></td><td>' + esc(r.gemeente) + '<div class="zacht">' + esc(r.provincie) + '</div></td>' +
         '<td><span class="code ' + soort + '">' + esc(r.code === '-' ? '—' : r.code) + '</span>' + (r.voorstel ? '<div class="zacht">voorstel ' + esc(r.voorstel) + '</div>' : '') + '</td><td>' + esc(r.zekerheid) + '</td>' +
-        '<td>' + (r.v1 === 'ja' ? esc(r.v1type) : '<span class="zacht">nee</span>') + '</td><td class="reden">' + esc(r.reden) + (r.oorzaak ? '<small>' + esc(r.oorzaak) + '</small>' : '') + '</td></tr>';
+        '<td>' + (r.v1 === 'ja' ? 'ja · ' + esc(r.v1type) + '<div class="zacht">objectid ' + esc(r.v1objectid) + '</div>' : '<span class="zacht">nee</span>') + '</td><td class="reden">' + esc(r.reden) + (r.oorzaak ? '<small>' + esc(r.oorzaak) + '</small>' : '') + '</td>' +
+        '<td class="links"><a href="' + esc(r.link) + '" target="_blank" rel="noopener">Register</a><a href="' + esc(r.uri) + '" target="_blank" rel="noopener">Linked data</a></td></tr>';
     });
-    $('rijen').innerHTML = h || '<tr><td colspan="7" class="zacht">Geen monumenten met deze filters.</td></tr>';
+    $('rijen').innerHTML = h || '<tr><td colspan="8" class="zacht">Geen monumenten met deze filters.</td></tr>';
     $('teller').textContent = sel.length + ' monumenten' + (sel.length > MAX ? ' (de eerste ' + MAX + ' getoond; verfijn de filters of download de selectie)' : '');
     document.querySelectorAll('#groepen button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.g === groep); });
   }
@@ -124,7 +126,7 @@
   }).catch(function () { $('teller').textContent = 'De lijst (lijst.json) kon niet worden geladen.'; });
 
   $('csv').addEventListener('click', function () {
-    var kol = ['nr', 'naam', 'gemeente', 'provincie', 'complexnr', 'functie', 'code', 'voorstel', 'uitkomst', 'zekerheid', 'reden', 'v1', 'v1type', 'v1categorie', 'vergelijking', 'oorzaak'];
+    var kol = ['nr', 'naam', 'gemeente', 'provincie', 'complexnr', 'functie', 'code', 'voorstel', 'uitkomst', 'zekerheid', 'reden', 'v1', 'v1objectid', 'v1type', 'v1categorie', 'vergelijking', 'oorzaak', 'link', 'uri'];
     var regels = [kol.join(';')].concat(selectie().map(function (r) {
       return kol.map(function (k) { var v = r[k] == null ? '' : String(r[k]); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(';');
     }));

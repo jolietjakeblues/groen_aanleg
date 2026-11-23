@@ -18,11 +18,12 @@ KOL = [
     ("Complexnummer", "complexnr", 12), ("Functie (register)", "functie", 24), ("Type (register)", "type", 22),
     ("Code stroomschema", "code", 9), ("Voorstel bij twijfel", "voorstel", 9), ("Uitkomst stroomschema", "uitkomst", 30),
     ("Zekerheid", "zekerheid", 10), ("Reden", "reden", 90),
-    ("Op lijst v1", "v1", 8), ("Type aanleg v1", "v1type", 20), ("Categorie v1", "v1categorie", 28),
+    ("Op lijst v1 (2024)", "v1", 9), ("Objectid lijst v1", "v1objectid", 10), ("Type aanleg v1", "v1type", 20), ("Categorie v1", "v1categorie", 28),
     ("Contour v1", "v1contour", 16), ("Oppervlakte v1 (m2)", "v1opp", 12),
-    ("Vergelijking met lijst v1", "vergelijking", 34), ("Oorzaak (alleen v1 niet bevestigd)", "oorzaak", 60), ("Monumentenregister", "link", 48),
+    ("Vergelijking met lijst v1", "vergelijking", 34), ("Oorzaak (alleen v1 niet bevestigd)", "oorzaak", 60), ("Monumentenregister", "link", 48), ("Linked data", "uri", 62),
 ]
 ZEK = {"hoog": 0, "middel": 1, "laag": 2}
+KOLNR = {k[1]: i for i, k in enumerate(KOL, 1)}
 KLEUR = {"groen": "E2EFDA", "rood": "FCE4D6", "geel": "FFF2CC", "kop": "1F4E3D"}
 
 
@@ -38,12 +39,13 @@ def blad(wb, titel, data, eerste=False):
         ws.append([r.get(k[1]) if r.get(k[1]) not in ("", None) else None for k in KOL])
         rij = ws.max_row
         kleur = KLEUR["groen"] if r["beschermd"] else KLEUR["geel"] if r["code"] in ("?", "4.A") else KLEUR["rood"]
-        ws.cell(rij, 8).fill = PatternFill("solid", fgColor=kleur)
-        ws.cell(rij, 10).fill = PatternFill("solid", fgColor=kleur)
-        ws.cell(rij, 12).alignment = Alignment(wrap_text=True, vertical="top")
-        link = ws.cell(rij, len(KOL))
-        link.hyperlink = r["link"]
-        link.font = Font(color="0563C1", underline="single")
+        ws.cell(rij, KOLNR["code"]).fill = PatternFill("solid", fgColor=kleur)
+        ws.cell(rij, KOLNR["uitkomst"]).fill = PatternFill("solid", fgColor=kleur)
+        ws.cell(rij, KOLNR["reden"]).alignment = Alignment(wrap_text=True, vertical="top")
+        for veld in ("link", "uri"):
+            link = ws.cell(rij, KOLNR[veld])
+            link.hyperlink = r[veld]
+            link.font = Font(color="0563C1", underline="single")
     for i, k in enumerate(KOL, 1):
         ws.column_dimensions[get_column_letter(i)].width = k[2]
     ws.freeze_panes = "C2"
@@ -141,7 +143,11 @@ blad(wb, "Afvallers en twijfel v1", afval)
 blad(wb, "Twijfel niet op v1", twijfel)
 blad(wb, "Nader onderzoek 4.A", onderzoek)
 doel = OUT / "groene_monumenten_stroomschema.xlsx"
-wb.save(doel)
+try:
+    wb.save(doel)
+except OSError:
+    # het bestand staat waarschijnlijk open in Excel
+    print("LET OP: Excel niet overschreven (bestand open in Excel?). Sluit het en draai opnieuw:", doel)
 
 
 def schrijf_csv(naam, data):

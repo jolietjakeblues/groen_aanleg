@@ -151,7 +151,7 @@
 (function () {
   'use strict';
   var ENDPOINT = 'https://api.linkeddata.cultureelerfgoed.nl/datasets/rce/cho/sparql';
-  var PFX = 'PREFIX ceo: <https://linkeddata.cultureelerfgoed.nl/def/ceo#> PREFIX skos: <http://www.w3.org/2004/02/skos/core#> ';
+  var PFX = 'PREFIX ceo: <https://linkeddata.cultureelerfgoed.nl/def/ceo#> PREFIX skos: <http://www.w3.org/2004/02/skos/core#> PREFIX dct: <http://purl.org/dc/terms/> ';
   var BESCHERMD = { '1.A': 1, '2.A': 1, '2.B': 1, '3.B': 1, '3.C': 1, '3.D': 1, '3.E': 1 };
 
   // Het schema zoals in de PDF (16 november 2015)
@@ -227,7 +227,9 @@
       h += '<dl class="feiten"><dt>Monument</dt><dd><a href="https://monumentenregister.cultureelerfgoed.nl/monumenten/' + esc(m.nr) + '" target="_blank" rel="noopener">' + esc(m.nr) + '</a>' + (m.naam ? ' · ' + esc(m.naam) : '') + '</dd>';
       if (m.functies.length || m.types.length) h += '<dt>Functie / type</dt><dd>' + esc(m.functies.concat(m.types).join('; ')) + '</dd>';
       if (m.complex) h += '<dt>Complex</dt><dd>' + esc(m.complex) + '</dd>';
-      h += '<dt>Lijst groenaanleg v1</dt><dd>' + (m.v1.length ? 'ja, als ' + esc(m.v1.join(', ')) : 'staat er niet op') + '</dd></dl>';
+      h += '<dt>Eerdere lijst (v1, 2024)</dt><dd>' + (m.v1.length ? '<b>ja</b>, als ' + esc(m.v1.join(', ')) + (m.categorie ? ' · ' + esc(m.categorie) : '') + (m.objectid ? ' · objectid ' + esc(m.objectid) : '') : 'staat er niet op') + '</dd>';
+      h += '<dt>Links</dt><dd><a href="https://monumentenregister.cultureelerfgoed.nl/monumenten/' + esc(m.nr) + '" target="_blank" rel="noopener">Monumentenregister</a>' +
+        (m.uri ? ' · <a href="' + esc(m.uri) + '" target="_blank" rel="noopener">Linked data</a>' : '') + '</dd></dl>';
     }
     h += '<div class="uitkomst ' + soort + '"><div class="code">' + esc(r.code === '-' ? '—' : r.code) + '</div><div class="tekst">' + esc(r.uitkomst) + '</div>' +
       '<div class="meta">' + (r.handmatig ? 'handmatig gekozen' : 'zekerheid: ' + esc(r.zekerheid) + (r.voorstel ? ' · voorstel: ' + esc(r.voorstel) : '')) + '</div>' +
@@ -285,13 +287,16 @@
       ' UNION { ?s ceo:heeftType ?k . ?k ceo:formeelStandpunt true ; ceo:heeftTypeNaam/skos:prefLabel ?l BIND("type" AS ?soort) }' +
       ' UNION { ?s ceo:heeftNaam ?k . ?k ceo:formeelStandpunt true ; ceo:naam ?l BIND("naam" AS ?soort) }' +
       ' UNION { ?s ceo:heeftTypeAanleg/skos:prefLabel ?l BIND("v1" AS ?soort) }' +
+      ' UNION { ?s ceo:heeftTypeAanleg ?t ; dct:identifier ?l BIND("objectid" AS ?soort) }' +
+      ' UNION { ?s ceo:heeftCategorieGroenaanleg/skos:prefLabel ?l BIND("categorie" AS ?soort) }' +
+      ' UNION { ?s ceo:rijksmonumentnummer ' + id + ' BIND(STR(?s) AS ?l) BIND("uri" AS ?soort) }' +
       ' UNION { ?s ceo:isOnderdeelVanComplex/ceo:complexnummer ?l BIND("complex" AS ?soort) }' +
       ' UNION { ?s ceo:heeftJuridischeStatus/skos:prefLabel ?l BIND("status" AS ?soort) } FILTER(!isLiteral(?l) || lang(?l) IN ("nl", "")) }';
     return Promise.all([sparql(q1), sparql(q2)]).then(function (res) {
       var teksten = res[0].sort(function (a, b) { return (b.datum || '').localeCompare(a.datum || ''); });
       var van = function (s) { return uniek(res[1].filter(function (r) { return r.soort === s; }).map(function (r) { return r.l; })); };
       if (!res[1].length && !teksten.length) throw new Error('Geen rijksmonument gevonden met nummer ' + nr + '.');
-      var m = { nr: nr, tekst: teksten.length ? teksten[0].tekst : '', naam: van('naam')[0] || '', functies: van('functie'), types: van('type'), v1: van('v1'), complex: van('complex')[0] || '', status: van('status') };
+      var m = { nr: nr, tekst: teksten.length ? teksten[0].tekst : '', naam: van('naam')[0] || '', functies: van('functie'), types: van('type'), v1: van('v1'), objectid: van('objectid')[0] || '', categorie: van('categorie')[0] || '', uri: van('uri')[0] || '', complex: van('complex')[0] || '', status: van('status') };
       var r = Stroomschema.classify(m);
       if (r.code !== '-' || !m.complex) return { m: m, r: r };
       // Stap 4: aanleg alleen in de complexomschrijving?
