@@ -32,7 +32,7 @@ for r in keuze:
 peil = datetime.date.fromtimestamp((ROOT / "data" / "raw" / "omschrijving.json").stat().st_mtime).isoformat()
 (SITE / "lijst.json").write_text(json.dumps({"peildatum": peil, "totaal": len(rows), "rijen": uit}, ensure_ascii=False), encoding="utf-8")
 
-for naam in ("index.html", "lijst.html", "classify.js"):
+for naam in ("index.html", "lijst.html", "over.html", "classify.js"):
     shutil.copy2(ROOT / naam, SITE / naam)
 for naam in ("groene_monumenten_stroomschema.xlsx", "alle_rijksmonumenten_stroomschema.csv"):
     shutil.copy2(ROOT / "resultaat" / naam, SITE / naam)
