@@ -10,6 +10,7 @@ Het stroomschema *Inventarisatie beschermde groenaanleg: uniform inventariseren*
 |---|---|---|
 | Stroomschema per monument | `index.html` | Monumentnummer invullen, de omschrijving wordt live opgehaald en het pad door het schema licht op. Zelf een pad aanklikken of eigen tekst plakken kan ook. Met kaartje: contour van het rijksmonument en van de aanleg uit lijst v1, op kaart of luchtfoto (PDOK). |
 | Lijst | `lijst.html` | Alle groene monumenten, afvallers en twijfelaars, met filters, reden, CSV-export van de selectie en een kaart van de selectie. |
+| Over | `over.html` | Uitleg voor gebruikers: wat het instrument doet, hoe het werkt en waar de grenzen liggen. |
 | De regels | `classify.js` | Het stroomschema als code. Wordt door de pagina én door de bulkverwerking gebruikt, zodat beide hetzelfde antwoord geven. |
 | Excel en CSV | `resultaat/` | Dezelfde lijst als Excel (met leeswijzer en uitsplitsing) en als CSV. |
 | Website | `site/` | Kant-en-klare map voor Cloudflare Pages. Wordt gemaakt door stap 4 hieronder. |
@@ -80,7 +81,19 @@ npx wrangler pages deploy site --project-name groenaanleg
 
 De eerste keer vraagt wrangler om in te loggen en het project aan te maken.
 
-**Afschermen.** Zonder verdere instelling is de pagina voor iedereen met de link bereikbaar. `robots.txt` en `_headers` houden zoekmachines buiten, maar dat is geen beveiliging. Voor alleen collega's: Cloudflare Zero Trust → Access → Applications → het Pages-adres toevoegen met een regel op e-maildomein (`@cultureelerfgoed.nl`).
+### Afschermen met Cloudflare Access
+
+Zonder Access is de site bereikbaar voor iedereen met de link. `robots.txt` en `_headers` houden zoekmachines buiten, maar dat is geen beveiliging.
+
+1. Cloudflare dashboard → Workers & Pages → project `groenaanleg` → Settings → General → **Access policy** → Enable. Dit maakt een Access-applicatie aan voor `*.groenaanleg.pages.dev`. Die beschermt alleen de adressen per upload (zoals `adcfee96.groenaanleg.pages.dev`), **niet** het vaste adres.
+2. Klik op **Manage** (opent Zero Trust → Access → Applications) en open de zojuist gemaakte applicatie.
+3. Voeg bij de hostnamen een tweede regel toe met domein `groenaanleg.pages.dev` en een leeg subdomein. Nu vallen het vaste adres en de adressen per upload er allebei onder.
+4. Bij **Policies**: een regel met actie *Allow* en als voorwaarde *Emails ending in* `@cultureelerfgoed.nl`, plus eventueel losse adressen onder *Emails*.
+5. Controleer in een privévenster: https://groenaanleg.pages.dev moet om een e-mailadres vragen en een eenmalige code sturen.
+
+Inloggen gaat standaard met een code per e-mail; er is geen account nodig. Zero Trust is gratis tot 50 gebruikers, maar vraagt de eerste keer om een teamnaam en een betaalmethode.
+
+Kijk na het instellen even of de adressen per upload ook om een code vragen; elke upload krijgt een eigen adres en die blijven bestaan.
 
 ## Bekende beperkingen
 

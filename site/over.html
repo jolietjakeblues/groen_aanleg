@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="description" content="Over het werkinstrument dat het stroomschema beschermde groenaanleg toepast op de registeromschrijvingen van alle rijksmonumenten: wat het doet, hoe het werkt en waar de grenzen liggen.">
+<title>Over dit instrument</title>
+<style>
+  :root { --bg: #f6f5f1; --paneel: #ffffff; --inkt: #1d2420; --zacht: #5d6861; --lijn: #d9d8d0; --accent: #1f4e3d; --ja: #2e7d4f; --nee: #b3402e; --twijfel: #9a6b00; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151916; --paneel: #1e2420; --inkt: #e8ebe6; --zacht: #9aa69d; --lijn: #353d37; --accent: #8fc7a8; --ja: #7fcf9b; --nee: #ef9080; --twijfel: #e6c15a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--inkt); font: 16px/1.6 "Segoe UI", system-ui, sans-serif; }
+  header { padding: 22px 28px 14px; border-bottom: 1px solid var(--lijn); background: var(--paneel); }
+  h1 { margin: 0 0 4px; font-size: 22px; font-weight: 650; }
+  nav { margin-top: 8px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; }
+  a { color: var(--accent); }
+  main { max-width: 74ch; padding: 24px 28px 56px; }
+  @media (max-width: 700px) { header, main { padding-left: 16px; padding-right: 16px; } }
+  h2 { font-size: 18px; margin: 30px 0 6px; }
+  p, ul { margin: 0 0 12px; }
+  ul { padding-left: 20px; }
+  li { margin-bottom: 5px; }
+  .lead { font-size: 17.5px; }
+  .let-op { border-left: 5px solid var(--twijfel); padding: 8px 0 8px 14px; margin: 18px 0; }
+  .wrap { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 14.5px; margin-bottom: 12px; }
+  th, td { text-align: left; padding: 6px 14px 6px 0; border-bottom: 1px solid var(--lijn); vertical-align: top; }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--zacht); }
+  td.code { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .ja { color: var(--ja); } .nee { color: var(--nee); } .twijfel { color: var(--twijfel); }
+  .zacht { color: var(--zacht); font-size: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Over dit instrument</h1>
+  <nav><a href="index.html">Stroomschema per monument</a><a href="lijst.html">Lijst en kaart</a></nav>
+</header>
+<main>
+  <p class="lead">Welke rijksmonumenten hebben een beschermde groenaanleg: een tuin, park, begraafplaats, kerkhof of erf dat zelf onder de bescherming valt? Dit instrument legt de registeromschrijving van elk rijksmonument langs het stroomschema dat de Rijksdienst voor het Cultureel Erfgoed daarvoor gebruikt, en laat per monument zien hoe het tot zijn antwoord komt.</p>
+
+  <div class="let-op"><b>Een voorstel, geen besluit.</b> Het schema wordt automatisch toegepast op de tekst van de omschrijving. De uitkomst is bedoeld om de lijst groenaanleg te toetsen en twijfelgevallen te vinden. Het oordeel blijft bij de specialist.</div>
+
+  <h2>Waarom</h2>
+  <p>De lijst met groene monumenten is met de hand opgebouwd en wordt geactualiseerd. Het stroomschema <i>Inventarisatie beschermde groenaanleg: uniform inventariseren</i> (16 november 2015) beschrijft hoe je uit een registeromschrijving afleidt of de aanleg beschermd is. Door dat schema uitvoerbaar te maken kan de hele lijst in één keer worden getoetst: wat wordt bevestigd, wat is een mogelijke afvaller, wat is twijfel en welke monumenten ontbreken mogelijk.</p>
+
+  <h2>Wat je ermee kunt</h2>
+  <ul>
+    <li><b><a href="index.html">Stroomschema per monument</a>.</b> Vul een rijksmonumentnummer in. De omschrijving wordt live opgehaald, het pad door het schema licht op en je ziet de code, de reden en de tekst met de gevonden vermeldingen gemarkeerd. Je kunt ook zelf een pad aanklikken of een eigen tekst plakken.</li>
+    <li><b><a href="lijst.html">Lijst en kaart</a>.</b> Alle monumenten waar het schema een groenaanleg vindt, plus alles wat op de eerdere lijst staat. Filter op groep, code, zekerheid, provincie, type aanleg of oorzaak, bekijk de selectie op de kaart en download haar als CSV.</li>
+    <li><b>Kaart en luchtfoto.</b> Per monument de contour van het rijksmonument en van de aanleg uit de eerdere lijst, op de kaart of op de actuele luchtfoto.</li>
+  </ul>
+
+  <h2>Hoe het werkt</h2>
+  <p>Het instrument zoekt in de omschrijving naar woorden die een aanleg aanduiden (tuin, park, begraafplaats, kerkhof, plantsoen, boomgaard, erf) en bepaalt per vermelding drie dingen:</p>
+  <ul>
+    <li><b>Waar</b> staat het: in de inleiding, de omschrijving of de waardering, of in een oudere tekst zonder die indeling.</li>
+    <li><b>Hoe</b> staat het er: in KAPITALEN, in een opsomming ("pastorie met tuin en hek") of in een lopende zin.</li>
+    <li><b>Is het een plaatsbepaling</b>: "in de tuin", "gelegen in een park", "de tuin wordt afgesloten door een hek". Dan gaat de tekst over een ander object en telt de aanleg niet mee.</li>
+  </ul>
+  <p>Daarna volgt het de vier stappen van het schema. Samenstellingen als tuinmuur, tuinhuis en parkgebouw zijn gebouwde objecten en tellen niet als aanleg. Losse elementen als een laan, vijver of haag tellen alleen als ondersteuning.</p>
+
+  <h2>De codes</h2>
+  <div class="wrap"><table>
+    <thead><tr><th>Code</th><th>Betekenis</th><th>Uitkomst</th></tr></thead>
+    <tbody>
+      <tr><td class="code">1.A</td><td>De aanleg heeft een eigen monumentnummer en is hoofdonderwerp</td><td class="ja">Beschermd</td></tr>
+      <tr><td class="code">2.A, 2.B</td><td>Oudere tekst: aanleg als zelfstandige eenheid genoemd, kort of met specificatie</td><td class="ja">Beschermd</td></tr>
+      <tr><td class="code">2.C</td><td>Oudere tekst: louter plaatsaanduiding</td><td class="nee">Niet beschermd</td></tr>
+      <tr><td class="code">3.B</td><td>Nieuwere tekst: in de inleiding in hoofdletters</td><td class="ja">Beschermd</td></tr>
+      <tr><td class="code">3.C, 3.D, 3.E</td><td>Nieuwere tekst: genoemd in de omschrijving, al dan niet ook in inleiding en waardering</td><td class="ja">Beschermd</td></tr>
+      <tr><td class="code">3.A, 3.F, 3.G</td><td>Nieuwere tekst: alleen in de inleiding in onderkast, alleen in de waardering, of alleen als plaatsbepaling</td><td class="nee">Niet beschermd</td></tr>
+      <tr><td class="code">4.A</td><td>Alleen in de complexomschrijving, uitgebreid omschreven</td><td class="twijfel">Nader onderzoek</td></tr>
+      <tr><td class="code">4.B</td><td>Alleen in de complexomschrijving, als situering</td><td class="nee">Niet beschermd</td></tr>
+      <tr><td class="code">?</td><td>Het schema geeft geen eenduidig antwoord; er staat een voorstel bij</td><td class="twijfel">Twijfel</td></tr>
+    </tbody>
+  </table></div>
+  <p><b>Zekerheid.</b> Hoog: de aanleg staat in kapitalen of is hoofdonderwerp. Middel: meerdere of gespecificeerde vermeldingen. Laag: één vermelding in een lopende zin. Lees "laag" altijd na.</p>
+
+  <h2>Vergelijking met de eerdere lijst</h2>
+  <p>Elke uitkomst wordt vergeleken met de eerste versie van de lijst groenaanleg (2024), zoals die als linked data beschikbaar is. Per monument zie je of het daarop stond, met type aanleg, categorie en objectid. Waar het schema een monument van die lijst niet bevestigt, staat de oorzaak erbij: bijvoorbeeld "alleen als plaatsbepaling genoemd" of "groen staat wel in de registerfunctie, maar niet in de omschrijving".</p>
+
+  <h2>Grenzen</h2>
+  <ul>
+    <li>Het instrument leest alleen de tekst. Het kijkt niet naar kaartbijlagen, besluiten of de situatie ter plaatse.</li>
+    <li>Wat "geen plaatsbepaling" is, blijft taal. Bij een enkele vermelding in een lopende zin zit het er vaker naast.</li>
+    <li>Hofjes worden niet als groenaanleg herkend als de tekst geen tuin of aanleg noemt.</li>
+    <li>Het schema heeft een gat: een aanleg die in onderkast in inleiding én waardering staat, maar niet in de omschrijving. Die gevallen krijgen "?".</li>
+    <li>De werkafspraken funerair erfgoed zijn niet apart ingebouwd. Een begraafplaats of kerkhof als hoofdonderwerp komt via stap 1 op beschermd uit.</li>
+    <li>Archeologische monumenten vallen buiten het schema.</li>
+    <li>Op de overzichtskaart ligt de stip soms aan de rand van het terrein. De kaart per monument toont de echte contour.</li>
+  </ul>
+
+  <h2>Bronnen</h2>
+  <ul>
+    <li>Registeromschrijvingen, functies, typen en contouren: <a href="https://linkeddata.cultureelerfgoed.nl/" target="_blank" rel="noopener">Linked Data Voorziening van de RCE</a>. Alleen kennis met een formeel standpunt.</li>
+    <li>Eerdere lijst: dataset <a href="https://linkeddata.cultureelerfgoed.nl/rce/groenaanleg" target="_blank" rel="noopener">groenaanleg</a>.</li>
+    <li>Kaart en luchtfoto: PDOK, Kadaster en Beeldmateriaal Nederland.</li>
+  </ul>
+  <p class="zacht" id="peil">De lijst is een momentopname; het stroomschema per monument haalt de tekst steeds actueel op.</p>
+  <p class="zacht">Dit is een werkinstrument voor intern gebruik en geen officiële publicatie van de Rijksdienst voor het Cultureel Erfgoed.</p>
+</main>
+<script>
+fetch('lijst.json').then(function (r) { return r.json(); }).then(function (j) {
+  document.getElementById('peil').textContent = 'De lijst is een momentopname van ' + j.peildatum + ' (' + j.totaal.toLocaleString('nl-NL') + ' rijksmonumenten getoetst); het stroomschema per monument haalt de tekst steeds actueel op.';
+}).catch(function () {});
+</script>
+</body>
+</html>
