@@ -89,3 +89,11 @@ paged("groenaanleg", GROEN, """SELECT ?s ?objectid ?naam ?type ?categorie WHERE 
   ?t skos:prefLabel ?type . ?cat skos:prefLabel ?categorie }""")
 paged("groenaanleg_complex", GROEN, "SELECT ?s ?complexnr WHERE { ?s ceo:isOnderdeelVanComplex/ceo:complexnummer ?complexnr }")
 paged("groenaanleg_contour", GROEN, "SELECT ?s ?contour ?bron ?opp WHERE { ?s ceo:heeftAanlegGeometrie ?g . ?g ceo:heeftContour/skos:prefLabel ?contour ; ceo:heeftContourBron/skos:prefLabel ?bron ; ceo:oppervlakteInVierkanteMeters ?opp }")
+
+# monumentpunt (WGS84) voor de kaart
+paged("punt", CHO, f"""PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+SELECT ?s ?wkt WHERE {{ {G} {{ ?s ceo:rijksmonumentnummer ?nr ; ceo:heeftGeometrie ?g . ?g geo:asWKT ?wkt FILTER(STRSTARTS(STR(?wkt), "Point")) }} }}""")
+# monumenten zonder punt: eerste hoekpunt van de contour (voldoende nauwkeurig voor een stippenkaart)
+paged("vlakpunt", CHO, f"""PREFIX geo: <http://www.opengis.net/ont/geosparql#>
+SELECT ?s ?c WHERE {{ {G} {{ ?s ceo:rijksmonumentnummer ?nr ; ceo:heeftGeometrie ?g . ?g geo:asWKT ?wkt FILTER(!STRSTARTS(STR(?wkt), "Point"))
+  BIND(STRBEFORE(STRAFTER(STR(?wkt), "(("), ",") AS ?c) }} }}""")

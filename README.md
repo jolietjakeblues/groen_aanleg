@@ -8,8 +8,8 @@ Het stroomschema *Inventarisatie beschermde groenaanleg: uniform inventariseren*
 
 | Onderdeel | Bestand | Wat het doet |
 |---|---|---|
-| Stroomschema per monument | `index.html` | Monumentnummer invullen, de omschrijving wordt live opgehaald en het pad door het schema licht op. Zelf een pad aanklikken of eigen tekst plakken kan ook. |
-| Lijst | `lijst.html` | Alle groene monumenten, afvallers en twijfelaars, met filters, reden en CSV-export van de selectie. |
+| Stroomschema per monument | `index.html` | Monumentnummer invullen, de omschrijving wordt live opgehaald en het pad door het schema licht op. Zelf een pad aanklikken of eigen tekst plakken kan ook. Met kaartje: contour van het rijksmonument en van de aanleg uit lijst v1, op kaart of luchtfoto (PDOK). |
+| Lijst | `lijst.html` | Alle groene monumenten, afvallers en twijfelaars, met filters, reden, CSV-export van de selectie en een kaart van de selectie. |
 | De regels | `classify.js` | Het stroomschema als code. Wordt door de pagina én door de bulkverwerking gebruikt, zodat beide hetzelfde antwoord geven. |
 | Excel en CSV | `resultaat/` | Dezelfde lijst als Excel (met leeswijzer en uitsplitsing) en als CSV. |
 | Website | `site/` | Kant-en-klare map voor Cloudflare Pages. Wordt gemaakt door stap 4 hieronder. |

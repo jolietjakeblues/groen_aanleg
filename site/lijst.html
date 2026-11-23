@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lijst groene monumenten</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root {
     --bg: #f6f5f1; --paneel: #ffffff; --inkt: #1d2420; --zacht: #5d6861; --lijn: #d9d8d0; --accent: #1f4e3d; --accent-zacht: #e4eee8;
@@ -47,6 +49,13 @@
   .code.ja { background: var(--ja-bg); color: var(--ja); } .code.nee { background: var(--nee-bg); color: var(--nee); } .code.twijfel { background: var(--twijfel-bg); color: var(--twijfel); }
   .zacht { color: var(--zacht); }
   td.links a { display: block; white-space: nowrap; }
+  .leaflet-container { color: #1d2420; font: 13px/1.4 "Segoe UI", system-ui, sans-serif; }
+  .leaflet-control-layers section { background: none; border: 0; padding: 0; border-radius: 0; }
+  #kaart { height: 440px; border: 1px solid var(--lijn); border-radius: 10px; margin-bottom: 10px; background: var(--paneel); z-index: 0; }
+  .legenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--zacht); margin: 0 0 14px; }
+  .legenda i { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .leaflet-popup-content { font: 13px/1.45 "Segoe UI", system-ui, sans-serif; color: #1d2420; }
+  .leaflet-popup-content b { font-size: 14px; } .leaflet-popup-content a { color: #1f4e3d; }
 </style>
 </head>
 <body>
@@ -67,6 +76,8 @@
     <button class="actie" id="csv" type="button">Selectie als CSV</button>
   </div>
   <p id="teller" role="status">Laden…</p>
+  <div id="kaart" aria-label="Kaart van de geselecteerde monumenten"></div>
+  <div class="legenda" id="legenda"></div>
   <div class="wrap"><table>
     <thead><tr><th>Nummer</th><th>Naam</th><th>Gemeente</th><th>Code</th><th>Zekerheid</th><th>Lijst v1 (2024)</th><th>Reden</th><th>Links</th></tr></thead>
     <tbody id="rijen"></tbody>
@@ -89,6 +100,52 @@
   ];
   var test = {}; GROEPEN.forEach(function (g) { test[g[0]] = g[2]; });
 
+  // ---- kaart ----
+  var KLEUR = [
+    ['Beschermd, ook op lijst v1', '#2e7d4f', function (r) { return r.beschermd && r.v1 === 'ja'; }],
+    ['Beschermd, nieuw', '#2a78d6', function (r) { return r.beschermd; }],
+    ['Lijst v1, niet bevestigd', '#c0432f', function (r) { return r.v1 === 'ja'; }],
+    ['Twijfel', '#c98a00', function (r) { return r.code === '?'; }],
+    ['Nader onderzoek (4.A)', '#7a5bb5', function () { return true; }]
+  ];
+  function basiskaart(map) {
+    var attr = 'Kaart: <a href="https://www.pdok.nl">PDOK</a> / Kadaster';
+    var brt = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png', { maxZoom: 19, attribution: attr });
+    var foto = L.tileLayer('https://service.pdok.nl/hwh/luchtfotorgb/wmts/v1_0/Actueel_orthoHR/EPSG:3857/{z}/{x}/{y}.jpeg', { maxZoom: 21, maxNativeZoom: 19, attribution: 'Luchtfoto: <a href="https://www.pdok.nl">PDOK</a> / Beeldmateriaal Nederland' });
+    brt.addTo(map);
+    L.control.layers({ 'Kaart': brt, 'Luchtfoto': foto }, null, { collapsed: false }).addTo(map);
+    return { brt: brt, foto: foto };
+  }
+  var kaart = null, puntlaag = null, vorigeSleutel = '';
+  if (window.L) {
+    kaart = L.map('kaart', { preferCanvas: true }).setView([52.2, 5.3], 7);
+    basiskaart(kaart);
+    puntlaag = L.layerGroup().addTo(kaart);
+    $('legenda').innerHTML = KLEUR.map(function (k) { return '<span><i style="background:' + k[1] + '"></i>' + k[0] + '</span>'; }).join('');
+  } else { $('kaart').hidden = true; }
+  function tekenKaart(sel) {
+    if (!kaart) return;
+    puntlaag.clearLayers();
+    var grenzen = [];
+    sel.forEach(function (r) {
+      if (r.lat == null) return;
+      var kleur = KLEUR.filter(function (k) { return k[2](r); })[0][1];
+      L.circleMarker([r.lat, r.lon], { radius: 5, color: '#ffffff', weight: 1, fillColor: kleur, fillOpacity: 0.9 })
+        .bindPopup(function () {
+          return '<b><a href="index.html?nr=' + r.nr + '">' + r.nr + '</a> ' + esc(r.naam) + '</b><br>' + esc(r.gemeente) + '<br>' +
+            '<b>' + esc(r.code) + '</b> ' + esc(r.uitkomst) + ' (' + esc(r.zekerheid) + ')<br>' +
+            (r.v1 === 'ja' ? 'Lijst v1: ' + esc(r.v1type) + ', objectid ' + esc(r.v1objectid) + '<br>' : '') +
+            esc(r.reden.length > 220 ? r.reden.slice(0, 217) + '…' : r.reden) + '<br>' +
+            '<a href="' + esc(r.link) + '" target="_blank" rel="noopener">Register</a> · <a href="' + esc(r.uri) + '" target="_blank" rel="noopener">Linked data</a>';
+        }, { maxWidth: 320 }).addTo(puntlaag);
+      grenzen.push([r.lat, r.lon]);
+    });
+    // alleen opnieuw inzoomen als de selectie echt verandert
+    var sleutel = sel.length + ':' + (sel[0] ? sel[0].nr : '') + ':' + (sel.length ? sel[sel.length - 1].nr : '');
+    if (grenzen.length && sleutel !== vorigeSleutel) kaart.fitBounds(grenzen, { padding: [24, 24], maxZoom: 16 });
+    vorigeSleutel = sleutel;
+  }
+
   function selectie() {
     var q = $('zoek').value.trim().toLowerCase(), c = $('code').value, z = $('zek').value, p = $('prov').value, t = $('type').value, o = $('oorzaak').value;
     return DATA.filter(function (r) {
@@ -99,6 +156,7 @@
   function teken() {
     $('oorzaak').hidden = groep !== 'afval'; if (groep !== 'afval') $('oorzaak').value = '';
     var sel = selectie(), h = '';
+    tekenKaart(sel);
     sel.slice(0, MAX).forEach(function (r) {
       var soort = r.beschermd ? 'ja' : (r.code === '?' || r.code === '4.A') ? 'twijfel' : 'nee';
       h += '<tr><td class="nr"><a href="index.html?nr=' + r.nr + '">' + r.nr + '</a></td><td>' + esc(r.naam) + '<div class="zacht">' + esc(r.functie) + '</div></td><td>' + esc(r.gemeente) + '<div class="zacht">' + esc(r.provincie) + '</div></td>' +

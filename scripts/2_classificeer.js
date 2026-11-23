@@ -27,6 +27,12 @@ for (const r of L('complex')) cx.set(r.c, { uri: r.c, nr: r.cnr, delen: [] });
 for (const r of L('complexhoofd')) { const c = cx.get(r.c); if (c) c.hoofd = r.hoofd; }
 multi('incomplex', 'complex', (m, r) => { const c = cx.get(r.complex); if (c && !m.complex) { m.complex = c; c.delen.push(m); } });
 
+// punt voor de kaart: monumentpunt, anders eerste hoekpunt van de contour
+const punt = new Map();
+const zetPunt = (s, tekst) => { const m = /(-?\d+\.\d+)\s+(-?\d+\.\d+)/.exec(tekst || ''); if (m && !punt.has(s)) punt.set(s, [+(+m[1]).toFixed(5), +(+m[2]).toFixed(5)]); };
+for (const r of L('punt')) zetPunt(r.s, r.wkt);
+for (const r of L('vlakpunt')) zetPunt(r.s, r.c);
+
 // lijst groenaanleg, eerste versie
 const v1 = new Map();
 for (const r of L('groenaanleg')) v1.set(r.s, { objectid: r.objectid, naam: r.naam, type: r.type, categorie: r.categorie });
@@ -73,7 +79,8 @@ for (const m of mon.values()) {
     v1: g ? 'ja' : 'nee', v1objectid: g ? +g.objectid : null, v1type: g ? g.type : '', v1categorie: g ? g.categorie : '', v1contour: g ? g.contour || '' : '', v1opp: g ? g.opp || null : null,
     vergelijking: vergelijk(m, g),
     link: 'https://monumentenregister.cultureelerfgoed.nl/monumenten/' + m.nr,
-    uri: m.uri
+    uri: m.uri,
+    lon: punt.has(m.uri) ? punt.get(m.uri)[0] : null, lat: punt.has(m.uri) ? punt.get(m.uri)[1] : null
   });
 }
 rows.sort((a, b) => a.nr - b.nr);

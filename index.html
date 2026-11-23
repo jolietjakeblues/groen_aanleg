@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Stroomschema groenaanleg</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
   :root {
     --bg: #f6f5f1; --paneel: #ffffff; --inkt: #1d2420; --zacht: #5d6861; --lijn: #d9d8d0;
@@ -94,6 +96,11 @@
   .tak.gekozen .vw { background: var(--accent-zacht); border-width: 2.5px; }
   .tak.voorstel .uit, .tak.voorstel .vw { border-style: dashed; background: var(--twijfel-bg); }
   .voetnoot { font-size: 12.5px; color: var(--zacht); margin: 14px 0 0; }
+  .leaflet-container { color: #1d2420; font: 13px/1.4 "Segoe UI", system-ui, sans-serif; }
+  .leaflet-control-layers section { background: none; border: 0; padding: 0; border-radius: 0; }
+  #kaart { height: 300px; border-radius: 8px; z-index: 0; }
+  .kaartlegenda { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--zacht); margin-top: 8px; }
+  .kaartlegenda i { display: inline-block; width: 14px; height: 10px; border: 2px solid; margin-right: 5px; vertical-align: -1px; }
   .hint { font-size: 13px; color: var(--zacht); margin: -4px 0 12px; }
 </style>
 </head>
@@ -131,6 +138,12 @@
     <section aria-label="Uitkomst" id="uitkomstblok" hidden>
       <h2>Uitkomst</h2>
       <div id="uitkomst"></div>
+    </section>
+
+    <section aria-label="Kaart" id="kaartblok" hidden>
+      <h2>Kaart</h2>
+      <div id="kaart"></div>
+      <div class="kaartlegenda"><span><i style="border-color:#2a78d6"></i>Contour rijksmonument</span><span><i style="border-color:#2e7d4f;background:rgba(46,125,79,.25)"></i>Contour aanleg lijst v1</span></div>
     </section>
 
     <section aria-label="Registeromschrijving" id="tekstblok" hidden>
@@ -271,6 +284,42 @@
     $('regtekst').innerHTML = uit; $('tekstblok').hidden = false;
   }
 
+  function basiskaart(map) {
+    var attr = 'Kaart: <a href="https://www.pdok.nl">PDOK</a> / Kadaster';
+    var brt = L.tileLayer('https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/grijs/EPSG:3857/{z}/{x}/{y}.png', { maxZoom: 19, attribution: attr });
+    var foto = L.tileLayer('https://service.pdok.nl/hwh/luchtfotorgb/wmts/v1_0/Actueel_orthoHR/EPSG:3857/{z}/{x}/{y}.jpeg', { maxZoom: 21, maxNativeZoom: 19, attribution: 'Luchtfoto: <a href="https://www.pdok.nl">PDOK</a> / Beeldmateriaal Nederland' });
+    brt.addTo(map);
+    L.control.layers({ 'Kaart': brt, 'Luchtfoto': foto }, null, { collapsed: false }).addTo(map);
+    return { brt: brt, foto: foto };
+  }
+  // WKT (Point, Polygon, MultiPolygon) naar ringen van [lat, lon]
+  function ringen(wkt) {
+    var uit = [], m, re = /\(([^()]+)\)/g;
+    while ((m = re.exec(wkt))) uit.push(m[1].split(',').map(function (p) { var c = p.trim().split(/\s+/); return [+c[1], +c[0]]; }));
+    return uit;
+  }
+  var kaart = null, kaartlaag = null;
+  function toonKaart(nr) {
+    if (!window.L) return;
+    var q = 'PREFIX geo: <http://www.opengis.net/ont/geosparql#> SELECT ?soort ?wkt WHERE { ?s ceo:rijksmonumentnummer "' + nr + '" . { ?s ceo:heeftGeometrie ?g BIND("monument" AS ?soort) } UNION { ?s ceo:heeftAanlegGeometrie ?g BIND("aanleg" AS ?soort) } ?g geo:asWKT ?wkt }';
+    sparql(q).then(function (rows) {
+      if (!rows.length) { $('kaartblok').hidden = true; return; }
+      $('kaartblok').hidden = false;
+      if (!kaart) { kaart = L.map('kaart'); basiskaart(kaart); kaartlaag = L.featureGroup().addTo(kaart); }
+      kaartlaag.clearLayers();
+      // eerst de aanleg (vlak), daarna het monument erbovenop
+      rows.sort(function (a, b) { return a.soort < b.soort ? -1 : 1; }).forEach(function (r) {
+        var rs = ringen(r.wkt), aanleg = r.soort === 'aanleg';
+        if (/^\s*point/i.test(r.wkt)) { if (rs[0]) L.circleMarker(rs[0][0], { radius: 6, color: '#ffffff', weight: 2, fillColor: '#2a78d6', fillOpacity: 1 }).addTo(kaartlaag); return; }
+        rs.forEach(function (ring) {
+          L.polygon(ring, aanleg ? { color: '#2e7d4f', weight: 2, fillOpacity: 0.25 } : { color: '#2a78d6', weight: 2.5, fillOpacity: 0.05 }).addTo(kaartlaag);
+        });
+      });
+      kaart.invalidateSize();
+      kaart.fitBounds(kaartlaag.getBounds(), { padding: [30, 30], maxZoom: 18 });
+    }).catch(function () { $('kaartblok').hidden = true; });
+  }
+
   function sparql(q) {
     return fetch(ENDPOINT, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/sparql-results+json' },
       body: 'query=' + encodeURIComponent(PFX + q) })
@@ -326,7 +375,7 @@
     haalOp(nr).then(function (x) {
       huidige = x.m;
       markeer(x.r.code, x.r.voorstel);
-      toonUitkomst(x.r, x.m); toonTekst(x.m.tekst, x.r);
+      toonUitkomst(x.r, x.m); toonTekst(x.m.tekst, x.r); toonKaart(nr);
       $('status').textContent = x.m.status.length && x.m.status.indexOf('rijksmonument') < 0 ? 'Let op: juridische status is “' + x.m.status.join(', ') + '”.' : '';
       try { history.replaceState(null, '', '?nr=' + nr); } catch (e) { /* file:// */ }
     }).catch(function (e) {
@@ -339,7 +388,7 @@
   $('eigenknop').addEventListener('click', function () {
     var t = $('eigen').value; if (!t.trim()) return;
     var r = Stroomschema.classify({ tekst: t }); huidige = null;
-    markeer(r.code, r.voorstel); toonUitkomst(r, null); toonTekst(t.replace(/\r\n?/g, '\n'), r); $('status').textContent = '';
+    markeer(r.code, r.voorstel); toonUitkomst(r, null); toonTekst(t.replace(/\r\n?/g, '\n'), r); $('status').textContent = ''; $('kaartblok').hidden = true;
   });
   [['518800', 'Joodse begraafplaats Eindhoven'], ['384277', 'familiebegraafplaats'], ['21531', 'kerk en kerkhof'], ['515475', 'villa in tuin'], ['513472', 'tuinaanleg Springer'], ['519436', 'boerderij met voortuin'], ['9483', 'kerk op kerkhof']].forEach(function (v) {
     var b = document.createElement('button'); b.type = 'button'; b.className = 'licht'; b.textContent = v[0] + ' · ' + v[1];
