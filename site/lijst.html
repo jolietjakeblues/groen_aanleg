@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lijst groene monumenten</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --paneel: #ffffff; --inkt: #1d2420; --zacht: #5d6861; --lijn: #d9d8d0; --accent: #1f4e3d; --accent-zacht: #e4eee8;
+    --ja: #2e7d4f; --ja-bg: #e3f1e6; --nee: #b3402e; --nee-bg: #f9e5e0; --twijfel: #9a6b00; --twijfel-bg: #fbf0cf;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151916; --paneel: #1e2420; --inkt: #e8ebe6; --zacht: #9aa69d; --lijn: #353d37; --accent: #8fc7a8; --accent-zacht: #24332b;
+      --ja: #7fcf9b; --ja-bg: #1d3526; --nee: #ef9080; --nee-bg: #3d221d; --twijfel: #e6c15a; --twijfel-bg: #3a3118;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--inkt); font: 15px/1.5 "Segoe UI", system-ui, sans-serif; }
+  header { padding: 22px 28px 14px; border-bottom: 1px solid var(--lijn); background: var(--paneel); }
+  h1 { margin: 0 0 4px; font-size: 22px; font-weight: 650; }
+  header p { margin: 0; color: var(--zacht); max-width: 80ch; }
+  nav { margin-top: 10px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; }
+  a { color: var(--accent); }
+  main { padding: 18px 28px 40px; }
+  @media (max-width: 800px) { main, header { padding-left: 16px; padding-right: 16px; } }
+  .groepen { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .groepen button { font: inherit; text-align: left; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--lijn); background: var(--paneel); color: var(--inkt); cursor: pointer; }
+  .groepen button b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .groepen button span { font-size: 12.5px; color: var(--zacht); }
+  .groepen button[aria-pressed=true] { border-color: var(--accent); background: var(--accent-zacht); box-shadow: inset 0 0 0 1px var(--accent); }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  input, select { font: inherit; padding: 7px 9px; border: 1px solid var(--lijn); border-radius: 7px; background: var(--paneel); color: var(--inkt); max-width: 100%; }
+  input[type=search] { width: 260px; }
+  button.actie { font: inherit; padding: 7px 12px; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: var(--paneel); cursor: pointer; font-weight: 600; }
+  :focus-visible { outline: 2px solid #4d7fbe; outline-offset: 2px; }
+  #teller { color: var(--zacht); font-size: 13.5px; margin: 0 0 8px; }
+  .wrap { overflow-x: auto; background: var(--paneel); border: 1px solid var(--lijn); border-radius: 10px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 900px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--zacht); padding: 9px 10px; border-bottom: 1px solid var(--lijn); white-space: nowrap; position: sticky; top: 0; background: var(--paneel); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--lijn); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  td.nr { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+  td.reden { min-width: 340px; color: var(--inkt); }
+  td.reden small { display: block; color: var(--zacht); margin-top: 2px; }
+  .code { display: inline-block; min-width: 38px; text-align: center; padding: 1px 7px; border-radius: 5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .code.ja { background: var(--ja-bg); color: var(--ja); } .code.nee { background: var(--nee-bg); color: var(--nee); } .code.twijfel { background: var(--twijfel-bg); color: var(--twijfel); }
+  .zacht { color: var(--zacht); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lijst groene monumenten</h1>
+  <p>Uitkomst van het stroomschema voor alle rijksmonumenten, vergeleken met de lijst groenaanleg v1. Het schema is automatisch op de registertekst toegepast: elke uitkomst is een voorstel met reden. Klik op een nummer om het monument langs het schema te zien.</p>
+  <nav><a href="index.html">← Stroomschema per monument</a><a href="groene_monumenten_stroomschema.xlsx" download>Excel downloaden</a><a href="alle_rijksmonumenten_stroomschema.csv" download>CSV alle rijksmonumenten</a><span class="zacht" id="peil"></span></nav>
+</header>
+<main>
+  <div class="groepen" id="groepen" role="group" aria-label="Groep"></div>
+  <div class="filters">
+    <input type="search" id="zoek" placeholder="Zoek op nummer, naam, gemeente…" aria-label="Zoeken">
+    <select id="code" aria-label="Code"><option value="">Alle codes</option></select>
+    <select id="zek" aria-label="Zekerheid"><option value="">Alle zekerheden</option><option>hoog</option><option>middel</option><option>laag</option></select>
+    <select id="prov" aria-label="Provincie"><option value="">Alle provincies</option></select>
+    <select id="type" aria-label="Type aanleg v1"><option value="">Alle typen v1</option></select>
+    <select id="oorzaak" aria-label="Oorzaak" hidden><option value="">Alle oorzaken</option></select>
+    <button class="actie" id="csv" type="button">Selectie als CSV</button>
+  </div>
+  <p id="teller" role="status">Laden…</p>
+  <div class="wrap"><table>
+    <thead><tr><th>Nummer</th><th>Naam</th><th>Gemeente</th><th>Code</th><th>Zekerheid</th><th>Lijst v1</th><th>Reden</th></tr></thead>
+    <tbody id="rijen"></tbody>
+  </table></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var MAX = 250, DATA = [], groep = 'groen';
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var GROEPEN = [
+    ['groen', 'Beschermde groenaanleg', function (r) { return r.beschermd; }],
+    ['bevestigd', 'waarvan op lijst v1', function (r) { return r.beschermd && r.v1 === 'ja'; }],
+    ['nieuw', 'waarvan nieuw', function (r) { return r.beschermd && r.v1 === 'nee'; }],
+    ['afval', 'Lijst v1, niet bevestigd', function (r) { return !r.beschermd && r.v1 === 'ja'; }],
+    ['twijfel', 'Twijfel, niet op v1', function (r) { return r.code === '?' && r.v1 === 'nee'; }],
+    ['onderzoek', 'Nader onderzoek (4.A)', function (r) { return r.code === '4.A' && r.v1 === 'nee'; }],
+    ['alles', 'Alles in deze lijst', function () { return true; }]
+  ];
+  var test = {}; GROEPEN.forEach(function (g) { test[g[0]] = g[2]; });
+
+  function selectie() {
+    var q = $('zoek').value.trim().toLowerCase(), c = $('code').value, z = $('zek').value, p = $('prov').value, t = $('type').value, o = $('oorzaak').value;
+    return DATA.filter(function (r) {
+      return test[groep](r) && (!c || r.code === c) && (!z || r.zekerheid === z) && (!p || r.provincie === p) && (!t || r.v1type === t) && (!o || r.oorzaak === o) &&
+        (!q || (r.nr + ' ' + r.naam + ' ' + r.gemeente + ' ' + r.functie + ' ' + (r.complexnr || '')).toLowerCase().indexOf(q) >= 0);
+    });
+  }
+  function teken() {
+    $('oorzaak').hidden = groep !== 'afval'; if (groep !== 'afval') $('oorzaak').value = '';
+    var sel = selectie(), h = '';
+    sel.slice(0, MAX).forEach(function (r) {
+      var soort = r.beschermd ? 'ja' : (r.code === '?' || r.code === '4.A') ? 'twijfel' : 'nee';
+      h += '<tr><td class="nr"><a href="index.html?nr=' + r.nr + '">' + r.nr + '</a></td><td>' + esc(r.naam) + '<div class="zacht">' + esc(r.functie) + '</div></td><td>' + esc(r.gemeente) + '<div class="zacht">' + esc(r.provincie) + '</div></td>' +
+        '<td><span class="code ' + soort + '">' + esc(r.code === '-' ? '—' : r.code) + '</span>' + (r.voorstel ? '<div class="zacht">voorstel ' + esc(r.voorstel) + '</div>' : '') + '</td><td>' + esc(r.zekerheid) + '</td>' +
+        '<td>' + (r.v1 === 'ja' ? esc(r.v1type) : '<span class="zacht">nee</span>') + '</td><td class="reden">' + esc(r.reden) + (r.oorzaak ? '<small>' + esc(r.oorzaak) + '</small>' : '') + '</td></tr>';
+    });
+    $('rijen').innerHTML = h || '<tr><td colspan="7" class="zacht">Geen monumenten met deze filters.</td></tr>';
+    $('teller').textContent = sel.length + ' monumenten' + (sel.length > MAX ? ' (de eerste ' + MAX + ' getoond; verfijn de filters of download de selectie)' : '');
+    document.querySelectorAll('#groepen button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.g === groep); });
+  }
+  function vul(id, waarden) { waarden.sort().forEach(function (w) { if (!w) return; var o = document.createElement('option'); o.textContent = w; $(id).appendChild(o); }); }
+  function uniek(k) { var s = {}; DATA.forEach(function (r) { s[r[k]] = 1; }); return Object.keys(s); }
+
+  fetch('lijst.json').then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (j) {
+    DATA = j.rijen; $('peil').textContent = 'Peildatum teksten: ' + j.peildatum + ' · ' + j.totaal.toLocaleString('nl-NL') + ' rijksmonumenten getoetst';
+    GROEPEN.forEach(function (g) {
+      var b = document.createElement('button'); b.type = 'button'; b.dataset.g = g[0];
+      b.innerHTML = '<b>' + DATA.filter(g[2]).length.toLocaleString('nl-NL') + '</b><span>' + g[1] + '</span>';
+      b.addEventListener('click', function () { groep = g[0]; teken(); }); $('groepen').appendChild(b);
+    });
+    vul('code', uniek('code')); vul('prov', uniek('provincie')); vul('type', uniek('v1type')); vul('oorzaak', uniek('oorzaak'));
+    ['zoek', 'code', 'zek', 'prov', 'type', 'oorzaak'].forEach(function (id) { $(id).addEventListener('input', teken); });
+    teken();
+  }).catch(function () { $('teller').textContent = 'De lijst (lijst.json) kon niet worden geladen.'; });
+
+  $('csv').addEventListener('click', function () {
+    var kol = ['nr', 'naam', 'gemeente', 'provincie', 'complexnr', 'functie', 'code', 'voorstel', 'uitkomst', 'zekerheid', 'reden', 'v1', 'v1type', 'v1categorie', 'vergelijking', 'oorzaak'];
+    var regels = [kol.join(';')].concat(selectie().map(function (r) {
+      return kol.map(function (k) { var v = r[k] == null ? '' : String(r[k]); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(';');
+    }));
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + regels.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'groenaanleg_selectie.csv'; a.click(); URL.revokeObjectURL(a.href);
+  });
+})();
+</script>
+</body>
+</html>
