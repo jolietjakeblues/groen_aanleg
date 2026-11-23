@@ -97,7 +97,10 @@
   .tak.gekozen.ja .uit { background: var(--ja-bg); } .tak.gekozen.nee .uit { background: var(--nee-bg); }
   .tak.gekozen .vw { background: var(--accent-zacht); border-width: 2.5px; }
   .tak.voorstel .uit, .tak.voorstel .vw { border-style: dashed; background: var(--twijfel-bg); }
-  .voetnoot { font-size: 12.5px; color: var(--zacht); margin: 14px 0 0; }
+  .tak .vw .vb { display: block; margin-top: 5px; padding-top: 5px; border-top: 1px dashed var(--lijn); font-size: 12px; color: var(--zacht); }
+  .plaatsnoot { margin: 12px 0 0; padding: 9px 12px; border-radius: 7px; background: var(--plaats-bg); font-size: 13.5px; }
+  .plaatsnoot ul { margin: 6px 0 0; padding-left: 18px; } .plaatsnoot li { color: var(--zacht); }
+  .plaatsnoot li.raak { color: var(--inkt); font-weight: 600; } .plaatsnoot li.raak::after { content: " ← lijkt hierop"; font-weight: 400; color: var(--zacht); }
   .leaflet-container { color: #1d2420; font: 13px/1.4 "Segoe UI", system-ui, sans-serif; }
   .leaflet-control-layers section { background: none; border: 0; padding: 0; border-radius: 0; }
   #kaart { height: 300px; border-radius: 8px; z-index: 0; }
@@ -117,7 +120,6 @@
     <h2>Stroomschema</h2>
     <p class="hint">Het gemarkeerde pad is de uitkomst voor het gekozen monument. Klik op een voorwaarde om zelf te kiezen.</p>
     <div class="schema" id="schema"></div>
-    <p class="voetnoot"><b>* 2.C</b> Plaatsaanduiding / situeringswaarde en dus geen monument volgens 2.C. Voorbeelden: ‘pastorie <u>in</u> grote tuin’, ‘in de tuin een tuinbeeld’, ‘de tuin wordt aan de oostzijde afgesloten door een TUINMUUR’.</p>
   </section>
 
   <div class="rechts">
@@ -176,7 +178,7 @@
     { nr: 2, vraag: '<b>2.</b> De <b>(oudere) omschrijving</b> is een platte tekst; er is geen indeling in inleiding / omschrijving / waardering. Korte tekst.', takken: [
       { code: '2.A', vw: 'Genoemd als <b>zelfstandige eenheid met zeer korte aanduiding</b>, voorbeeld: “pastorie <u>met</u> tuin en hek”.' },
       { code: '2.B', vw: 'Genoemd als <b>zelfstandige eenheid met nadere specificatie</b>, voorbeeld: ‘grote tuin met oude bomen’ of ‘verhoogd kerkhof omgeven door boomsingel’.' },
-      { code: '2.C', vw: '<b>Louter plaatsaanduiding</b>, ook wel situeringswaarde. De rest van de omschrijving gaat over een ander object. Zie voorbeelden*.' }] },
+      { code: '2.C', vw: '<b>Louter plaatsaanduiding</b>, ook wel situeringswaarde. De rest van de omschrijving gaat over een ander object.<span class="vb">Voorbeelden: ‘pastorie <u>in</u> grote tuin’ · ‘in de tuin een tuinbeeld’ · ‘de tuin wordt aan de oostzijde afgesloten door een TUINMUUR’</span>' }] },
     { nr: 3, vraag: '<b>3. Nieuwere omschrijving</b> met inleiding, omschrijving en waardering (soms niet alle drie).', takken: [
       { code: '3.A', vw: 'De aanleg is alleen genoemd in de <b>inleiding</b>, niet in omschrijving en waardering, in <b>kleine</b> letters (onderkast).' },
       { code: '3.B', vw: 'De aanleg is genoemd in de <b>inleiding</b>, of inleiding en waardering, in <b>HOOFDLETTERS</b>.' },
@@ -235,6 +237,22 @@
 
   var huidige = null; // gegevens van het laatst opgehaalde monument
 
+  // Voetnoot bij 2.C uit het stroomschema, getoond bij de uitkomst zelf
+  function plaatsnoot(r) {
+    var code = /^\d/.test(r.code) ? r.code : r.voorstel;
+    if (code !== '2.C' && code !== '3.G') return '';
+    var pl = (r.vermeldingen || []).filter(function (v) { return v.klasse === 'PLAATS' && !v.zwak; })[0];
+    var vz = pl ? String(pl.voorzetsel || '') : '';
+    // welk voorbeeld uit de voetnoot lijkt het meest op deze tekst?
+    var raak = !pl ? -1 : /afsluiting|toegang/.test(vz) ? 2 : /^in$/.test(vz) && /^\s*in\b/i.test(pl.zin) ? 1 : 0;
+    var vb = ['‘pastorie <u>in</u> grote tuin’', '‘in de tuin een tuinbeeld’', '‘de tuin wordt aan de oostzijde afgesloten door een TUINMUUR’'];
+    return '<div class="plaatsnoot"><b>Waarom geen monument?</b> ' +
+      (code === '2.C' ? 'Volgens de voetnoot bij 2.C in het stroomschema is een plaatsaanduiding (situeringswaarde) geen monument.' :
+        'De aanleg is alleen als plaatsbepaling genoemd. Het stroomschema geeft bij 2.C voorbeelden van wat daaronder valt.') +
+      (pl ? ' In deze tekst: “' + esc(pl.woord) + '”' + (vz && !/afsluiting|object|gelegen/.test(vz) ? ' na “' + esc(vz) + '”' : /afsluiting/.test(vz) ? ' wordt genoemd bij een afsluiting of toegang' : '') + '.' : '') +
+      '<ul>' + vb.map(function (t, i) { return '<li' + (i === raak ? ' class="raak"' : '') + '>' + t + '</li>'; }).join('') + '</ul></div>';
+  }
+
   function toonUitkomst(r, m) {
     var soort = r.beschermd ? 'ja' : (r.code === '?' || r.code === '4.A') ? 'twijfel' : 'nee';
     var h = '';
@@ -248,7 +266,7 @@
     }
     h += '<div class="uitkomst ' + soort + '"><div class="code">' + esc(r.code === '-' ? '—' : r.code) + '</div><div class="tekst">' + esc(r.uitkomst) + '</div>' +
       '<div class="meta">' + (r.handmatig ? 'handmatig gekozen' : 'zekerheid: ' + esc(r.zekerheid) + (r.voorstel ? ' · voorstel: ' + esc(r.voorstel) : '')) + '</div>' +
-      '<p class="reden">' + esc(r.reden) + '</p></div>';
+      '<p class="reden">' + esc(r.reden) + '</p>' + plaatsnoot(r) + '</div>';
     if (r.stappen && r.stappen.length) {
       h += '<ol class="stappen">';
       r.stappen.forEach(function (s) {
